@@ -1,14 +1,8 @@
 import { useState, useEffect } from "react"
 import { useParams, Link } from "react-router-dom"
 import { type Submission, type QuestionEvaluation, getEvaluations, overrideEvaluation, getExam, type Exam } from "../services/api"
-import { Card, CardContent } from "../components/ui/Card"
-import { Button } from "../components/ui/Button"
-import { ArrowLeft, CheckCircle2, AlertTriangle, XCircle, Edit3 } from "lucide-react"
+import { ArrowLeft, CheckCircle2, AlertTriangle, XCircle, Edit3, RefreshCw, FileImage, Sparkles, FileText } from "lucide-react"
 import { toast } from "sonner"
-// Note: We need a way to get a single submission. We'll add it to API soon or pass data differently. 
-// For now, let's fetch exam + evaluations.
-
-// Placeholder for full API call
 import { api } from "../services/api"
 
 export default function ResultDetails() {
@@ -71,19 +65,24 @@ export default function ResultDetails() {
     }
   }
 
-  if (!submission || !exam) return <div>Loading...</div>
+  if (!submission || !exam) return <div className="p-8 text-center text-gray-500 animate-pulse">Loading evaluation details...</div>
 
   if (submission.submission_status === 'error') {
     return (
       <div className="flex flex-col items-center justify-center h-full p-8 text-center space-y-4">
-        <AlertTriangle className="w-12 h-12 text-red-500" />
-        <h2 className="text-xl font-bold text-gray-800">Evaluation Failed</h2>
-        <p className="text-gray-500 max-w-md">
-          The AI encountered an error while evaluating this submission (e.g. Rate Limit exceeded).
+        <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-2">
+          <AlertTriangle className="w-8 h-8 text-red-500" />
+        </div>
+        <h2 className="text-xl font-bold text-gray-900">Evaluation Failed</h2>
+        <p className="text-gray-500 max-w-md text-sm">
+          The AI encountered an error while evaluating this submission (e.g., Rate Limit exceeded or network failure).
         </p>
-        <Button onClick={handleReevaluate} className="mt-4">
-          Retry AI Evaluation
-        </Button>
+        <button 
+          onClick={handleReevaluate} 
+          className="mt-6 px-6 py-2.5 text-sm font-semibold text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors flex items-center gap-2 shadow-sm"
+        >
+          <RefreshCw className="w-4 h-4" /> Retry AI Evaluation
+        </button>
       </div>
     )
   }
@@ -91,93 +90,109 @@ export default function ResultDetails() {
   if (submission.submission_status === 'processing') {
     return (
       <div className="flex flex-col items-center justify-center h-full p-8 text-center space-y-4">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-        <h2 className="text-xl font-bold text-gray-800">Evaluating...</h2>
-        <p className="text-gray-500 max-w-md">
+        <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mb-2 shadow-inner">
+          <Sparkles className="h-8 w-8 text-indigo-600 animate-pulse" />
+        </div>
+        <h2 className="text-xl font-bold text-gray-900">Evaluating...</h2>
+        <p className="text-gray-500 max-w-md text-sm">
           Please wait while the AI evaluates this submission.
         </p>
-        <Button onClick={loadData} variant="outline" className="mt-4">
+        <button 
+          onClick={loadData} 
+          className="mt-6 px-6 py-2.5 text-sm font-semibold text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+        >
           Refresh Status
-        </Button>
+        </button>
       </div>
     )
   }
 
   return (
-    <div className="h-full flex flex-col -m-8">
+    <div className="h-[calc(100vh-100px)] flex flex-col -m-8">
       {/* Header */}
-      <div className="border-b bg-white p-4 px-8 flex justify-between items-center shrink-0 shadow-sm z-10">
-        <div className="flex items-center gap-4">
+      <div className="border-b border-gray-200 bg-white p-4 px-8 flex justify-between items-center shrink-0 z-20">
+        <div className="flex items-center gap-5">
           <Link to={`/exams/${exam.id}`}>
-            <Button variant="ghost" size="icon"><ArrowLeft className="w-5 h-5" /></Button>
+            <button className="w-10 h-10 rounded-full hover:bg-gray-50 flex items-center justify-center text-gray-500 hover:text-gray-900 transition-colors border border-transparent hover:border-gray-200">
+              <ArrowLeft className="w-5 h-5" />
+            </button>
           </Link>
           <div>
-            <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold">{exam.name}</div>
-            <h1 className="text-xl font-bold text-gray-900">{submission.student_name} ({submission.student_roll_number})</h1>
+            <div className="text-xs text-primary-600 uppercase tracking-wider font-bold mb-0.5">{exam.name}</div>
+            <h1 className="text-lg font-bold text-gray-900">{submission.student_name} <span className="text-gray-400 font-medium ml-1">({submission.student_roll_number})</span></h1>
           </div>
         </div>
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-6 bg-gray-50 px-5 py-2 rounded-2xl border border-gray-100">
           <div className="text-right">
-            <div className="text-sm text-gray-500">Final Score</div>
-            <div className="text-2xl font-bold text-primary-700">
-              {submission.obtained_marks} <span className="text-lg text-gray-400">/ {submission.total_marks}</span>
+            <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-0.5">Final Score</div>
+            <div className="text-xl font-bold text-gray-900">
+              {submission.obtained_marks} <span className="text-sm font-medium text-gray-400">/ {submission.total_marks}</span>
             </div>
           </div>
-          <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center font-bold text-primary-700">
+          <div className="h-10 w-px bg-gray-200"></div>
+          <div className={`h-12 w-12 rounded-xl flex items-center justify-center font-bold text-lg shadow-inner ${
+            (submission.percentage || 0) >= 40 ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-red-50 text-red-700 border border-red-100'
+          }`}>
             {Math.round(submission.percentage || 0)}%
           </div>
         </div>
       </div>
 
       {/* Main Workspace */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden bg-gray-50">
         
         {/* Left Panel - Question List */}
-        <div className="w-72 border-r bg-gray-50 overflow-y-auto shrink-0 flex flex-col">
-          <div className="p-4 border-b font-semibold text-sm text-gray-600 bg-white">
+        <div className="w-80 border-r border-gray-200 bg-white overflow-y-auto shrink-0 flex flex-col z-10 shadow-[4px_0_15px_-3px_rgba(0,0,0,0.02)]">
+          <div className="p-5 border-b border-gray-100 font-bold text-sm text-gray-900 bg-gray-50/50 flex items-center justify-between">
             Questions Pipeline
+            <span className="bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full text-xs">{evaluations.length}</span>
           </div>
-          <div className="flex-1 p-2 space-y-2">
+          <div className="flex-1 p-3 space-y-2">
             {evaluations.map((ev, i) => {
               const isCorrect = ev.final_marks === ev.max_marks
               const isPartial = ev.final_marks > 0 && ev.final_marks < ev.max_marks
               const isWrong = ev.final_marks === 0
               const confPct = Math.round((ev.confidence || 0) * 100)
+              const isSelected = selectedEval?.id === ev.id
               
               return (
                 <button
                   key={ev.id}
                   onClick={() => setSelectedEval(ev)}
-                  className={`w-full text-left px-3 py-3 rounded-md text-sm flex flex-col transition-colors border ${
-                    selectedEval?.id === ev.id 
-                      ? 'bg-primary-50 border-primary-200 text-primary-900 shadow-sm' 
-                      : 'bg-white border-gray-200 hover:border-primary-300 text-gray-700'
+                  className={`w-full text-left px-4 py-3.5 rounded-xl text-sm flex flex-col transition-all border ${
+                    isSelected 
+                      ? 'bg-primary-50 border-primary-200 shadow-sm ring-1 ring-primary-500/20' 
+                      : 'bg-white border-gray-100 hover:border-gray-300 hover:bg-gray-50 text-gray-700'
                   }`}
                 >
-                  <div className="flex items-center justify-between w-full mb-2">
-                    <div className="flex items-center gap-2 font-medium">
-                      {isCorrect && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+                  <div className="flex items-center justify-between w-full mb-3">
+                    <div className={`flex items-center gap-2 font-bold ${isSelected ? 'text-primary-900' : 'text-gray-900'}`}>
+                      {isCorrect && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
                       {isPartial && <AlertTriangle className="w-4 h-4 text-amber-500" />}
                       {isWrong && <XCircle className="w-4 h-4 text-red-500" />}
                       Question {i + 1}
                     </div>
-                    <span className="font-mono font-bold">{ev.final_marks}/{ev.max_marks}</span>
+                    <span className={`font-mono font-bold px-2 py-0.5 rounded-md text-xs ${
+                      isSelected ? 'bg-primary-100 text-primary-700' : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {ev.final_marks}/{ev.max_marks}
+                    </span>
                   </div>
                   
-                  <div className="w-full flex items-center justify-between text-xs text-gray-500">
+                  <div className="w-full flex items-center justify-between text-[11px] uppercase tracking-wider font-semibold text-gray-500 mb-1.5">
                     <span>AI Confidence</span>
-                    <span className={confPct >= 80 ? 'text-green-600 font-medium' : confPct >= 50 ? 'text-amber-600 font-medium' : 'text-red-600 font-medium'}>
+                    <span className={confPct >= 80 ? 'text-emerald-600' : confPct >= 50 ? 'text-amber-600' : 'text-red-600'}>
                       {confPct}%
                     </span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1 overflow-hidden">
+                  <div className={`w-full rounded-full h-1.5 overflow-hidden ${isSelected ? 'bg-primary-200/50' : 'bg-gray-100'}`}>
                     <div 
-                      className={`h-1.5 rounded-full ${confPct >= 80 ? 'bg-green-500' : confPct >= 50 ? 'bg-amber-500' : 'bg-red-500'}`} 
+                      className={`h-1.5 rounded-full ${confPct >= 80 ? 'bg-emerald-500' : confPct >= 50 ? 'bg-amber-500' : 'bg-red-500'}`} 
                       style={{ width: `${confPct}%` }}
                     ></div>
                   </div>
                   {ev.feedback && (
-                    <p className="w-full mt-2 text-xs text-gray-500 italic line-clamp-2 leading-tight">
+                    <p className={`w-full mt-3 text-xs leading-relaxed line-clamp-2 ${isSelected ? 'text-primary-800/80' : 'text-gray-500'}`}>
                       "{ev.feedback}"
                     </p>
                   )}
@@ -188,10 +203,8 @@ export default function ResultDetails() {
         </div>
 
         {/* Center Panel - Answer Sheet Viewer */}
-        <div className="flex-1 bg-gray-200 overflow-auto relative flex justify-center p-8">
-          {/* This is where Konva would go to draw bounding boxes. We simulate it for now with an image */}
-          <div className="bg-white shadow-lg relative overflow-hidden flex flex-col" style={{ width: '800px', minHeight: '1100px' }}>
-             
+        <div className="flex-1 bg-gray-100/50 overflow-auto relative flex justify-center p-8 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px]">
+          <div className="bg-white shadow-xl shadow-gray-200/50 border border-gray-200 relative overflow-hidden flex flex-col rounded-sm" style={{ width: '800px', minHeight: '1100px' }}>
              {submission.original_file_url ? (
                submission.original_file_url.toLowerCase().endsWith('.pdf') ? (
                  <iframe
@@ -207,23 +220,24 @@ export default function ResultDetails() {
                  />
                )
              ) : (
-               <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400">
-                  <p>Original Handwritten Answer Sheet View</p>
-                  <p className="text-xs mt-2">(Rendered here via react-konva for annotations)</p>
+               <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 bg-gray-50">
+                  <FileImage className="w-16 h-16 text-gray-300 mb-4" />
+                  <p className="font-medium text-gray-500">Original Handwritten Answer Sheet View</p>
+                  <p className="text-xs mt-1">(Rendered here via react-konva for annotations)</p>
                </div>
              )}
              
              {/* Simulated Annotation box for selected question */}
              {selectedEval && (
-                <div className="absolute top-32 left-10 w-[700px] h-[300px] border-4 rounded bg-transparent transition-colors z-10 
-                  ${selectedEval.final_marks === selectedEval.max_marks ? 'border-green-500 bg-green-500/10' : 
-                    selectedEval.final_marks === 0 ? 'border-red-500 bg-red-500/10' : 'border-amber-500 bg-amber-500/10'}"
+                <div className={`absolute top-32 left-10 w-[700px] h-[300px] border-4 rounded-lg bg-transparent transition-all z-10 shadow-lg 
+                  ${selectedEval.final_marks === selectedEval.max_marks ? 'border-emerald-500 bg-emerald-500/5 shadow-emerald-500/20' : 
+                    selectedEval.final_marks === 0 ? 'border-red-500 bg-red-500/5 shadow-red-500/20' : 'border-amber-500 bg-amber-500/5 shadow-amber-500/20'}`}
                 >
-                  <div className={`absolute -top-8 right-0 px-3 py-1 rounded text-white font-bold text-sm
-                    ${selectedEval.final_marks === selectedEval.max_marks ? 'bg-green-500' : 
+                  <div className={`absolute -top-4 -left-1 px-4 py-1.5 rounded-full text-white font-bold text-sm shadow-sm flex items-center gap-1.5
+                    ${selectedEval.final_marks === selectedEval.max_marks ? 'bg-emerald-500' : 
                     selectedEval.final_marks === 0 ? 'bg-red-500' : 'bg-amber-500'}`}
                   >
-                    AI: {selectedEval.final_marks}/{selectedEval.max_marks}
+                    <Sparkles className="w-3.5 h-3.5" /> AI: {selectedEval.final_marks}/{selectedEval.max_marks}
                   </div>
                 </div>
              )}
@@ -231,112 +245,123 @@ export default function ResultDetails() {
         </div>
 
         {/* Right Panel - Evaluation Details */}
-        <div className="w-96 border-l bg-white overflow-y-auto shrink-0 shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.05)] z-10 flex flex-col">
+        <div className="w-[400px] border-l border-gray-200 bg-white overflow-y-auto shrink-0 shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.02)] z-10 flex flex-col">
           {selectedEval ? (
-            <div className="p-6 space-y-6">
-              <div className="flex justify-between items-start">
+            <div className="p-6 space-y-8">
+              <div className="flex justify-between items-start bg-indigo-50/50 p-5 -mx-6 -mt-6 border-b border-indigo-100">
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900">AI Evaluation</h3>
-                  <p className="text-sm text-gray-500">Confidence: {(selectedEval.confidence * 100).toFixed(0)}%</p>
+                  <h3 className="text-sm font-bold text-indigo-900 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-indigo-600" /> AI Evaluation
+                  </h3>
+                  <p className="text-xs font-semibold text-indigo-600/70">Confidence: {(selectedEval.confidence * 100).toFixed(0)}%</p>
                 </div>
-                <div className={`text-2xl font-bold px-3 py-1 rounded-lg ${
-                  selectedEval.final_marks === selectedEval.max_marks ? 'bg-green-100 text-green-700' : 
-                  selectedEval.final_marks === 0 ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
+                <div className={`text-2xl font-bold px-4 py-1.5 rounded-xl shadow-inner border ${
+                  selectedEval.final_marks === selectedEval.max_marks ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 
+                  selectedEval.final_marks === 0 ? 'bg-red-50 text-red-700 border-red-100' : 'bg-amber-50 text-amber-700 border-amber-100'
                 }`}>
                   {selectedEval.final_marks}/{selectedEval.max_marks}
                 </div>
               </div>
 
               {isEditing ? (
-                <Card className="border-primary-200 shadow-sm bg-primary-50/50">
-                  <CardContent className="pt-6 space-y-4">
-                    <h4 className="font-semibold text-primary-900 flex items-center gap-2">
+                <div className="bg-white border border-primary-200 rounded-xl shadow-sm overflow-hidden">
+                  <div className="bg-primary-50 px-4 py-3 border-b border-primary-100">
+                    <h4 className="font-bold text-primary-900 flex items-center gap-2 text-sm">
                       <Edit3 className="w-4 h-4" /> Teacher Override
                     </h4>
+                  </div>
+                  <div className="p-4 space-y-4">
                     <div>
-                      <label className="text-sm font-medium">New Marks</label>
+                      <label className="text-xs font-semibold text-gray-700 uppercase tracking-wider">New Marks</label>
                       <input 
                         type="number" 
                         max={selectedEval.max_marks}
                         min={0}
                         step={0.5}
-                        className="w-full mt-1 p-2 border rounded focus:ring-2 focus:ring-primary-500 outline-none"
+                        className="w-full mt-1.5 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all font-mono font-bold text-lg"
                         value={overrideMarks} 
                         onChange={e => setOverrideMarks(parseFloat(e.target.value))} 
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-medium">Reason (Optional)</label>
+                      <label className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Reason (Optional)</label>
                       <textarea 
-                        className="w-full mt-1 p-2 border rounded min-h-[80px] focus:ring-2 focus:ring-primary-500 outline-none"
+                        className="w-full mt-1.5 px-3 py-2 border border-gray-200 rounded-lg min-h-[80px] focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all text-sm resize-none"
                         value={overrideReason} 
                         onChange={e => setOverrideReason(e.target.value)} 
                         placeholder="Why are you changing these marks?"
                       />
                     </div>
-                    <div className="flex gap-2">
-                      <Button size="sm" onClick={handleOverride} className="w-full">Save</Button>
-                      <Button size="sm" variant="outline" onClick={() => setIsEditing(false)} className="w-full">Cancel</Button>
+                    <div className="flex gap-2 pt-2">
+                      <button onClick={() => setIsEditing(false)} className="flex-1 py-2 text-sm font-semibold text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">
+                        Cancel
+                      </button>
+                      <button onClick={handleOverride} className="flex-1 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors shadow-sm shadow-primary-200">
+                        Save Marks
+                      </button>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               ) : (
-                <Button variant="outline" className="w-full" onClick={() => {
-                  setIsEditing(true); 
-                  setOverrideMarks(selectedEval.final_marks);
-                  setOverrideReason("");
-                }}>
-                  <Edit3 className="w-4 h-4 mr-2" /> Override Marks
-                </Button>
+                <button 
+                  className="w-full py-2.5 text-sm font-semibold text-gray-700 bg-white border border-gray-200 rounded-xl hover:border-primary-300 hover:text-primary-600 transition-colors flex items-center justify-center gap-2"
+                  onClick={() => {
+                    setIsEditing(true); 
+                    setOverrideMarks(selectedEval.final_marks);
+                    setOverrideReason("");
+                  }}
+                >
+                  <Edit3 className="w-4 h-4" /> Override Marks
+                </button>
               )}
 
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {selectedEval.matched_concepts && selectedEval.matched_concepts.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-semibold text-green-700 mb-2 flex items-center gap-2">
+                    <h4 className="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
                       <CheckCircle2 className="w-4 h-4" /> Matched Concepts
                     </h4>
-                    <ul className="text-sm space-y-1">
+                    <div className="flex flex-wrap gap-2">
                       {selectedEval.matched_concepts.map((c, idx) => (
-                        <li key={idx} className="flex gap-2 text-gray-700">
-                          <span className="text-green-500 mt-0.5">•</span> {c}
-                        </li>
+                        <span key={idx} className="inline-flex items-center px-2.5 py-1 rounded-md text-sm font-medium bg-emerald-50 text-emerald-800 border border-emerald-100">
+                          {c}
+                        </span>
                       ))}
-                    </ul>
+                    </div>
                   </div>
                 )}
 
                 {selectedEval.missing_concepts && selectedEval.missing_concepts.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-semibold text-red-700 mb-2 flex items-center gap-2">
+                    <h4 className="text-xs font-bold text-red-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
                       <XCircle className="w-4 h-4" /> Missing Concepts
                     </h4>
-                    <ul className="text-sm space-y-1">
+                    <div className="flex flex-wrap gap-2">
                       {selectedEval.missing_concepts.map((c, idx) => (
-                        <li key={idx} className="flex gap-2 text-gray-700">
-                          <span className="text-red-500 mt-0.5">•</span> {c}
-                        </li>
+                        <span key={idx} className="inline-flex items-center px-2.5 py-1 rounded-md text-sm font-medium bg-red-50 text-red-800 border border-red-100">
+                          {c}
+                        </span>
                       ))}
-                    </ul>
+                    </div>
                   </div>
                 )}
               </div>
 
-              <div className="pt-4 border-t border-gray-100">
-                <h4 className="text-sm font-semibold text-gray-900 mb-2">AI Feedback</h4>
-                <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded border whitespace-pre-wrap">
+              <div className="pt-6 border-t border-gray-100">
+                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">AI Feedback</h4>
+                <div className="text-sm text-gray-700 bg-gray-50 p-4 rounded-xl border border-gray-100 leading-relaxed">
                   {selectedEval.feedback || "No specific feedback provided."}
                 </div>
               </div>
               
               {selectedEval.rubric_breakdown && selectedEval.rubric_breakdown.length > 0 && (
-                <div className="pt-4 border-t border-gray-100">
-                  <h4 className="text-sm font-semibold text-gray-900 mb-2">Rubric Breakdown</h4>
+                <div className="pt-6 border-t border-gray-100">
+                  <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Rubric Breakdown</h4>
                   <div className="space-y-2">
                     {selectedEval.rubric_breakdown.map((r: any, idx: number) => (
-                      <div key={idx} className="flex justify-between items-center text-sm p-2 bg-gray-50 rounded">
-                        <span className="text-gray-700 truncate mr-2" title={r.criterion}>{r.criterion}</span>
-                        <span className="font-mono font-medium shrink-0">{r.awarded_marks}/{r.max_marks}</span>
+                      <div key={idx} className="flex justify-between items-center text-sm p-3 bg-white border border-gray-100 shadow-sm rounded-xl">
+                        <span className="text-gray-700 font-medium truncate mr-3" title={r.criterion}>{r.criterion}</span>
+                        <span className="font-mono font-bold text-gray-900 bg-gray-100 px-2 py-0.5 rounded-md shrink-0">{r.awarded_marks}/{r.max_marks}</span>
                       </div>
                     ))}
                   </div>
@@ -345,8 +370,12 @@ export default function ResultDetails() {
 
             </div>
           ) : (
-            <div className="p-8 text-center text-gray-500">
-              Select a question from the left panel to view its evaluation.
+            <div className="p-10 flex flex-col items-center text-center text-gray-500 mt-10">
+              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                <FileText className="w-8 h-8 text-gray-300" />
+              </div>
+              <h3 className="font-bold text-gray-900 mb-1">No Question Selected</h3>
+              <p className="text-sm">Select a question from the left panel to view its detailed AI evaluation.</p>
             </div>
           )}
         </div>

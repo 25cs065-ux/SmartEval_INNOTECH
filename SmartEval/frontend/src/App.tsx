@@ -8,6 +8,7 @@ import ExamsList from "./pages/ExamsList"
 import Analytics from "./pages/Analytics"
 import Results from "./pages/Results"
 import Settings from "./pages/Settings"
+import ExamReport from "./pages/ExamReport"
 import { Toaster } from "sonner"
 
 export default function App() {
@@ -25,6 +26,7 @@ export default function App() {
             <Route path="analytics" element={<Analytics />} />
             <Route path="settings" element={<Settings />} />
           </Route>
+          <Route path="/exams/:id/report" element={<ExamReport />} />
         </Routes>
       </BrowserRouter>
       <Toaster position="top-right" richColors />
