@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+sqlalchemy
+aiosqlite
+google-genai
+python-multipart
+pydantic-settings
+pillow
+opencv-python-headless
+greenlet
